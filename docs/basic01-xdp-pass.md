@@ -10,7 +10,7 @@ sudo apt install build-essential clang llvm libelf-dev libbpf-dev iproute2
 ```
 
 # 2. Compiling example code
-- 
+- Chuyển tới thư mục có code cần biên dịch:
 ```
 cd ~/xdp-tutorial/basic01-xdp-pass
 ```
