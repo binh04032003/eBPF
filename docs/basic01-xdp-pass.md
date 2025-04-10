@@ -75,9 +75,4 @@ ip link set dev veth0 xdp off
 ```
 ![](../imgs/5.png)
 ## 4.2 Loading using xdp-loader
-- Cài đặt xdp-tools bằng lệnh:
-```
-sudo apt install xdp-tools
-```
-- 
 ## 4.3 Loading using xdp_pass_user
