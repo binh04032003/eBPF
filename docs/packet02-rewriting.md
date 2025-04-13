@@ -27,7 +27,45 @@ Có một vài điều cần lưu ý khi dùng hàm trợ giúp này:
 ## 2.1 Sửa đổi port number
 Truy cập vào header UDP hoặc TCP, lấy trường dest (cổng đích), giảm đi 1 đơn vị, và ghi lại vào chính trường đó.
 
+Tìm `SEC("xdp)` hàm `xdp_port_rewrite_func` trong file `xdp_prog_kern.c` thêm đoạn code sau:
 
+```
+void *data = (void *)(long)ctx->data;
+    void *data_end = (void *)(long)ctx->data_end;
+
+    // Phân tích header Ethernet
+    struct ethhdr *eth = data;
+    if ((void *)(eth + 1) > data_end)
+        return XDP_PASS;
+
+    // Kiểm tra có phải IPv4 không
+    if (eth->h_proto != __constant_htons(ETH_P_IP))
+        return XDP_PASS;
+
+    // Phân tích IP header
+    struct iphdr *iph = data + sizeof(struct ethhdr);
+    if ((void *)(iph + 1) > data_end)
+        return XDP_PASS;
+
+    // Kiểm tra có phải UDP không
+    if (iph->protocol != IPPROTO_UDP)
+        return XDP_PASS;
+
+    // Phân tích UDP header
+    struct udphdr *udph = (void *)iph + sizeof(struct iphdr);
+    if ((void *)(udph + 1) > data_end)
+        return XDP_PASS;
+
+    // Ghi đè port đích: giảm đi 1 đơn vị
+    udph->dest = bpf_htons(bpf_ntohs(udph->dest) - 1);
+
+    return XDP_PASS;
+```
+
+Compile và load chương trình, sau đó gửi thử gói tin bằng lệnh socat:
+```
+socat - 'udp6:[fc00:dead:cafe:1::1]:2000'
+```
 
 ## 2.2 Gỡ bỏ thẻ VLAN ngoài cùng
 Chương trình XDP sẽ khiến cho không thấy bất kỳ thẻ VLAN nào trong các gói tin ping yêu cầu (echo request), tuy nhiên, các gói phản hồi (echo reply) vẫn sẽ có thẻ VLAN.
